@@ -24,7 +24,7 @@
         <stringProp name="variableNames"></stringProp>
       </CSVDataSet>
       <hashTree/>
-      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="TCP Test" enabled="true">
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="TCP Test" enabled="false">
         <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
         <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
           <boolProp name="LoopController.continue_forever">false</boolProp>
@@ -36,15 +36,83 @@
         <stringProp name="ThreadGroup.duration"></stringProp>
         <stringProp name="ThreadGroup.delay"></stringProp>
       </ThreadGroup>
+      <hashTree/>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="BinaryTCPClientImpl" enabled="true">
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+          <stringProp name="LoopController.loops">1</stringProp>
+        </elementProp>
+        <stringProp name="ThreadGroup.num_threads">1</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">1</stringProp>
+        <boolProp name="ThreadGroup.scheduler">false</boolProp>
+        <stringProp name="ThreadGroup.duration"></stringProp>
+        <stringProp name="ThreadGroup.delay"></stringProp>
+      </ThreadGroup>
       <hashTree>
-        <TCPSampler guiclass="TCPSamplerGui" testclass="TCPSampler" testname="TCP Sampler" enabled="true">
+        <UserParameters guiclass="UserParametersGui" testclass="UserParameters" testname="User Parameters" enabled="true">
+          <collectionProp name="UserParameters.names">
+            <stringProp name="-602535354">command1</stringProp>
+          </collectionProp>
+          <collectionProp name="UserParameters.thread_values">
+            <collectionProp name="55981015">
+              <stringProp name="1538">02</stringProp>
+            </collectionProp>
+          </collectionProp>
+          <boolProp name="UserParameters.per_iteration">false</boolProp>
+        </UserParameters>
+        <hashTree/>
+        <JSR223PreProcessor guiclass="TestBeanGUI" testclass="JSR223PreProcessor" testname="H16 PreProcessor" enabled="true">
+          <stringProp name="cacheKey">true</stringProp>
+          <stringProp name="filename"></stringProp>
+          <stringProp name="parameters"></stringProp>
+          <stringProp name="script">String command = &quot;${command1}&quot;;
+log.info(command);
+char[] h16 = &quot;0123456789abcdef&quot;.toCharArray();
+StringBuilder tmp = new StringBuilder(&quot;&quot;);
+byte[] bytes = command.getBytes();
+int pos = 0; 
+for (int i = 0; i &lt; bytes.length; i++) {
+	pos = (bytes[i] &amp; 0x0f0) &gt;&gt; 4;
+	tmp.append(h16[pos]);
+	pos = bytes[i] &amp; 0x0f;
+	tmp.append(h16[pos]);
+}
+vars.put(&quot;HexCommand&quot;, tmp.toString().trim());
+</stringProp>
+          <stringProp name="scriptLanguage">groovy</stringProp>
+        </JSR223PreProcessor>
+        <hashTree/>
+        <JSR223PostProcessor guiclass="TestBeanGUI" testclass="JSR223PostProcessor" testname="H16 PostProcessor" enabled="true">
+          <stringProp name="cacheKey">true</stringProp>
+          <stringProp name="filename"></stringProp>
+          <stringProp name="parameters"></stringProp>
+          <stringProp name="script">import org.apache.jmeter.samplers.SampleResult;
+
+String h16 = &quot;0123456789abcdef&quot;;
+String response_data = prev.getResponseDataAsString();
+char[] hexs = response_data.toCharArray();
+byte[] bytes = new byte[response_data.length()/2];
+int pos = 0;
+for(int i = 0; i &lt; bytes.length; i++){
+     pos = h16.indexOf(hexs[i*2] as int)*16;
+     pos += h16.indexOf(hexs[i*2+1] as int);
+     bytes[i] = (byte)(pos &amp; 0xff);
+}
+String responseData = (new String(bytes)).trim();
+vars.put(&quot;response&quot;, responseData);</stringProp>
+          <stringProp name="scriptLanguage">groovy</stringProp>
+        </JSR223PostProcessor>
+        <hashTree/>
+        <TCPSampler guiclass="TCPSamplerGui" testclass="TCPSampler" testname="BinaryTCPClientImpl Sampler" enabled="true">
+          <stringProp name="TCPSampler.classname">BinaryTCPClientImpl</stringProp>
           <stringProp name="TCPSampler.server">127.0.0.1</stringProp>
           <boolProp name="TCPSampler.reUseConnection">true</boolProp>
           <stringProp name="TCPSampler.port">9999</stringProp>
           <boolProp name="TCPSampler.nodelay">false</boolProp>
           <stringProp name="TCPSampler.timeout">100</stringProp>
           <stringProp name="TCPSampler.ctimeout">100</stringProp>
-          <stringProp name="TCPSampler.request">${command1}</stringProp>
+          <stringProp name="TCPSampler.request">${HexCommand}</stringProp>
           <boolProp name="TCPSampler.closeConnection">false</boolProp>
           <stringProp name="TCPSampler.EolByte">10</stringProp>
           <stringProp name="ConfigTestElement.username"></stringProp>
@@ -88,28 +156,89 @@
           <stringProp name="filename"></stringProp>
         </ResultCollector>
         <hashTree/>
-        <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Response Assertion" enabled="true">
-          <collectionProp name="Asserion.test_strings">
-            <stringProp name="2043017103">executed</stringProp>
-          </collectionProp>
-          <stringProp name="Assertion.custom_message"></stringProp>
-          <stringProp name="Assertion.test_field">Assertion.response_data</stringProp>
-          <boolProp name="Assertion.assume_success">false</boolProp>
-          <intProp name="Assertion.test_type">2</intProp>
-        </ResponseAssertion>
+        <DebugSampler guiclass="TestBeanGUI" testclass="DebugSampler" testname="Debug Sampler" enabled="true">
+          <boolProp name="displayJMeterProperties">false</boolProp>
+          <boolProp name="displayJMeterVariables">true</boolProp>
+          <boolProp name="displaySystemProperties">false</boolProp>
+        </DebugSampler>
+        <hashTree/>
+        <TCPSampler guiclass="TCPSamplerGui" testclass="TCPSampler" testname="TCP Sampler" enabled="false">
+          <stringProp name="TCPSampler.server">127.0.0.1</stringProp>
+          <boolProp name="TCPSampler.reUseConnection">true</boolProp>
+          <stringProp name="TCPSampler.port">9999</stringProp>
+          <boolProp name="TCPSampler.nodelay">false</boolProp>
+          <stringProp name="TCPSampler.timeout">100</stringProp>
+          <stringProp name="TCPSampler.ctimeout">100</stringProp>
+          <stringProp name="TCPSampler.request">123</stringProp>
+          <boolProp name="TCPSampler.closeConnection">false</boolProp>
+          <stringProp name="TCPSampler.EolByte">10</stringProp>
+          <stringProp name="ConfigTestElement.username"></stringProp>
+          <stringProp name="ConfigTestElement.password"></stringProp>
+        </TCPSampler>
         <hashTree/>
       </hashTree>
-      <UserParameters guiclass="UserParametersGui" testclass="UserParameters" testname="User Parameters" enabled="true">
-        <collectionProp name="UserParameters.names">
-          <stringProp name="-602535354">command1</stringProp>
-        </collectionProp>
-        <collectionProp name="UserParameters.thread_values">
-          <collectionProp name="55980977">
-            <stringProp name="1537">01</stringProp>
-          </collectionProp>
-        </collectionProp>
-        <boolProp name="UserParameters.per_iteration">false</boolProp>
-      </UserParameters>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="AccessLog Sampler" enabled="false">
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+          <stringProp name="LoopController.loops">3</stringProp>
+        </elementProp>
+        <stringProp name="ThreadGroup.num_threads">1</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">1</stringProp>
+        <boolProp name="ThreadGroup.scheduler">false</boolProp>
+        <stringProp name="ThreadGroup.duration"></stringProp>
+        <stringProp name="ThreadGroup.delay"></stringProp>
+      </ThreadGroup>
+      <hashTree>
+        <AccessLogSampler guiclass="TestBeanGUI" testclass="AccessLogSampler" testname="Access Log Sampler" enabled="true">
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+            <collectionProp name="Arguments.arguments"/>
+          </elementProp>
+          <stringProp name="domain">127.0.0.1</stringProp>
+          <boolProp name="imageParsing">false</boolProp>
+          <stringProp name="logFile">/Users/xs/Desktop/TesterHome/Demo/access.log</stringProp>
+          <stringProp name="parserClassName">org.apache.jmeter.protocol.http.util.accesslog.TCLogParser</stringProp>
+          <stringProp name="portString">8888</stringProp>
+          <stringProp name="filterClassName">org.apache.jmeter.protocol.http.util.accesslog.LogFilter</stringProp>
+        </AccessLogSampler>
+        <hashTree/>
+      </hashTree>
+      <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree" enabled="true">
+        <boolProp name="ResultCollector.error_logging">false</boolProp>
+        <objProp>
+          <name>saveConfig</name>
+          <value class="SampleSaveConfiguration">
+            <time>true</time>
+            <latency>true</latency>
+            <timestamp>true</timestamp>
+            <success>true</success>
+            <label>true</label>
+            <code>true</code>
+            <message>true</message>
+            <threadName>true</threadName>
+            <dataType>true</dataType>
+            <encoding>false</encoding>
+            <assertions>true</assertions>
+            <subresults>true</subresults>
+            <responseData>false</responseData>
+            <samplerData>false</samplerData>
+            <xml>false</xml>
+            <fieldNames>true</fieldNames>
+            <responseHeaders>false</responseHeaders>
+            <requestHeaders>false</requestHeaders>
+            <responseDataOnError>false</responseDataOnError>
+            <saveAssertionResultsFailureMessage>true</saveAssertionResultsFailureMessage>
+            <assertionsResultsToSave>0</assertionsResultsToSave>
+            <bytes>true</bytes>
+            <sentBytes>true</sentBytes>
+            <url>true</url>
+            <threadCounts>true</threadCounts>
+            <idleTime>true</idleTime>
+            <connectTime>true</connectTime>
+          </value>
+        </objProp>
+        <stringProp name="filename"></stringProp>
+      </ResultCollector>
       <hashTree/>
     </hashTree>
   </hashTree>
